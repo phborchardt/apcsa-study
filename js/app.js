@@ -190,7 +190,7 @@ function showHome() {
       disabled = "disabled";
     } else {
       const count = topics.reduce((n, t) => n + t.questions.length, 0);
-      meta = `${plural(topics.length, "topic")} · ${plural(count, "question")}`;
+      meta = count ? plural(topics.length, "topic") : "No questions yet";
       if (!count) disabled = "disabled";
     }
     return `
@@ -222,13 +222,15 @@ function showUnit(unit) {
 
   const rows = topics.map(t => {
     const n = t.questions.length;
-    const short = n > 0 && n < QUIZ_LENGTH ? ` <span class="warn">(add ${QUIZ_LENGTH - n}+ for a full quiz)</span>` : "";
+    // Students don't see bank sizes; only a missing or short topic gets a note.
+    const meta = !n ? "No questions yet"
+      : n < QUIZ_LENGTH ? `<span class="warn">(add ${QUIZ_LENGTH - n}+ for a full quiz)</span>` : "";
     return `
       <li>
         <button class="topic-row" data-topic="${escapeHtml(t.id)}" ${n ? "" : "disabled"}>
           <span class="topic-id">${escapeHtml(t.id)}</span>
           <span class="topic-title">${escapeHtml(t.title)}</span>
-          <span class="topic-meta">${n ? plural(n, "question") : "No questions yet"}${short}</span>
+          ${meta ? `<span class="topic-meta">${meta}</span>` : ""}
         </button>
       </li>`;
   }).join("");

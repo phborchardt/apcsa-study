@@ -68,7 +68,12 @@ defineTopic(1, "1.3", "Expressions and Output", [
 ## Versions
 
 - The project is a git repo. Each release is a commit tagged `v1`, `v2`, ... plus a zip export in `C:\Users\admin\Claude\JavaStudy-versions\JavaStudy-vN.zip` (`git archive --format=zip -o <zip> vN`).
-- Version 1 is the CED-reviewed question bank (including the second concept-question check) with the original page design. Version 2 adds the HTHS letterhead design. Work after it is version 3 until the teacher asks to release it.
+- Version 1 is the CED-reviewed question bank (including the second concept-question check) with the original page design. Version 2 adds the HTHS letterhead design. Version 3 hides question-bank sizes from students (unit cards show only topic counts, topic rows show no count). Work after it is version 4 until the teacher asks to release it.
+
+## Publishing
+
+- Live on GitHub Pages at https://phborchardt.github.io/apcsa-study/ (public repo `phborchardt/apcsa-study`, Pages builds from `main` at `/`). Students see whatever is on `main`, so push only released versions, and only when the teacher asks.
+- The GitHub CLI is at `C:\Program Files\GitHub CLI\gh.exe` (not on PATH), signed in as phborchardt.
 
 ## Design
 
