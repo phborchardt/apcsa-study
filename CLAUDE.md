@@ -64,3 +64,15 @@ defineTopic(1, "1.3", "Expressions and Output", [
 1. Create `questions/unitN.js` with `defineTopic(N, ...)` calls.
 2. Add a `<script>` tag for it in `index.html`, after `js/app.js`.
 3. Add `{ number: N, title: "...", file: "questions/unitN.js" }` to `UNITS` in `js/app.js`.
+
+## Versions
+
+- The project is a git repo. Each release is a commit tagged `v1`, `v2`, ... plus a zip export in `C:\Users\admin\Claude\JavaStudy-versions\JavaStudy-vN.zip` (`git archive --format=zip -o <zip> vN`).
+- Version 1 is the CED-reviewed question bank (including the second concept-question check) with the original page design. Version 2 adds the HTHS letterhead design. Work after it is version 3 until the teacher asks to release it.
+
+## Design
+
+- Branding follows the High Technology High School letterhead (`Downloads\site design.pdf`): maroon `#651B32`, warm gray `#8E8478`, a white header with the logo, the double maroon/gray bar, and a maroon footer. The header stays white in dark mode, like the printed letterhead.
+- `images/hths-logo.png` and `images/hths-gear.png` (favicon) were cropped from the letterhead. Don't add the administrators' names or the school address.
+- The header and footer show "Mr. Borchardt" and "AP Computer Science A".
+- Headless Edge won't render narrower than 496px; test phone width by loading the page in a 400px iframe.

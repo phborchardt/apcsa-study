@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AP CSA Study</title>
+  <title>AP CSA Study | Mr. Borchardt</title>
+  <link rel="icon" type="image/png" href="images/hths-gear.png">
   <link rel="stylesheet" href="css/style.css">
 
   <!-- app.js must load first: it defines defineTopic() used by the question files. -->
@@ -17,14 +18,35 @@
   <script src="questions/unit4.js"></script>
 </head>
 <body>
+  <!-- Header and footer follow the High Technology High School letterhead. -->
   <header class="site-header">
-    <div class="wrap">
-      <a href="#" class="brand">AP CSA Study</a>
+    <div class="wrap header-row">
+      <a href="#" class="brand" aria-label="AP CSA Study home">
+        <img src="images/hths-logo.png" alt="High Technology High School" class="logo">
+      </a>
+      <div class="teacher">
+        <span class="teacher-name">Mr. Borchardt</span>
+        <span class="teacher-class">AP Computer Science A</span>
+      </div>
+    </div>
+    <div class="stripes" aria-hidden="true">
+      <div class="stripe-maroon"></div>
+      <div class="stripe-gray"></div>
     </div>
   </header>
 
   <main class="wrap" id="app">
     <noscript>This site needs JavaScript turned on.</noscript>
   </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <span>Mr. Borchardt</span>
+      <span class="sep" aria-hidden="true">|</span>
+      <span>AP Computer Science A</span>
+      <span class="sep" aria-hidden="true">|</span>
+      <span>High Technology High School</span>
+    </div>
+  </footer>
 </body>
 </html>
