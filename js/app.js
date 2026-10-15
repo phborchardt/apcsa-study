@@ -264,6 +264,8 @@ function startQuiz(spec, questions) {
     score: 0,
     answered: false,
     missed: [],      // { q, chosen }
+    streak: 0,       // correct answers in a row
+    bestStreak: 0,
   };
   showQuestion();
 }
@@ -297,7 +299,10 @@ function showQuestion() {
           <div class="quiz-unit">${quizHeading()}</div>
           <div class="quiz-count">Question ${quiz.index + 1} of ${total}</div>
         </div>
-        <div class="quiz-score" aria-live="polite">Score <strong>${quiz.score}</strong> / ${quiz.index}</div>
+        <div class="quiz-stats">
+          ${streakHtml(quiz.streak)}
+          <div class="quiz-score" aria-live="polite">Score <strong>${quiz.score}</strong> / ${quiz.index}</div>
+        </div>
       </div>
       <div class="progress"><div class="progress-bar" style="width:${(quiz.index / total) * 100}%"></div></div>
 
@@ -332,6 +337,7 @@ function choose(chosen) {
   const isRight = chosen === correct;
   if (isRight) quiz.score++;
   else quiz.missed.push({ q, chosen });
+  updateStreak(isRight);
 
   app.querySelectorAll(".choice").forEach((btn, i) => {
     btn.disabled = true;
@@ -363,7 +369,6 @@ function nextQuestion() {
 function showSummary() {
   const total = quiz.questions.length;
   const pct = Math.round((quiz.score / total) * 100);
-  const msg = pct === 100 ? "Perfect score!" : pct >= 80 ? "Nice work." : pct >= 60 ? "Getting there." : "Keep practicing.";
 
   const missedList = quiz.missed.map(({ q, chosen }) => {
     const c = answerIndex(q);
@@ -383,7 +388,7 @@ function showSummary() {
     <section class="summary">
       <div class="quiz-unit">${quizHeading()}</div>
       <h1>${quiz.score} / ${total} <span class="pct">(${pct}%)</span></h1>
-      <p class="lede">${msg}</p>
+      ${celebrationHtml(quiz.score, total, quiz.bestStreak)}
       <div class="summary-actions">
         ${quiz.missed.length ? `<button class="btn btn-primary" id="retry">Retry ${plural(quiz.missed.length, "missed question")}</button>` : ""}
         <button class="btn ${quiz.missed.length ? "" : "btn-primary"}" id="again">New quiz on this ${quiz.spec.label === "Mixed review" ? "unit" : "topic"}</button>
@@ -401,6 +406,140 @@ function showSummary() {
   quiz = null;
   window.scrollTo(0, 0);
 }
+
+/* ------------------------------------------------------------------
+   Game feedback: streak meter (during a quiz) and the dancing robot
+   (on the summary). Pure SVG and CSS, so it works offline from file://.
+   ------------------------------------------------------------------ */
+
+const STREAK_MILESTONES = [3, 5, 10];
+
+const FLAME_SVG = `
+  <svg class="flame" viewBox="0 0 24 28" aria-hidden="true">
+    <path class="flame-outer" d="M12 1c1.2 4.3-1.6 6.6-3.4 9C6.8 12.4 5 14.6 5 18a7 7 0 0 0 14 0c0-3-1.7-5.3-2.9-6.6.3 2-.4 3.6-1.8 4.2.6-4.4-.5-9.6-2.3-14.6z"/>
+    <path class="flame-inner" d="M12 13c.4 2-.9 3.1-1.7 4.2-.7.9-1.3 1.8-1.3 3a3 3 0 0 0 6 0c0-1.4-.8-2.4-1.3-3 0 .9-.4 1.5-1 1.8.2-2-.2-4-.7-6z"/>
+  </svg>`;
+
+// 0 = no streak, 1 = 1-2, 2 = 3-4, 3 = 5-9, 4 = 10 or more (blue-hot flame)
+function streakTier(n) {
+  return n >= 10 ? 4 : n >= 5 ? 3 : n >= 3 ? 2 : n >= 1 ? 1 : 0;
+}
+
+function streakHtml(n) {
+  return `
+    <div class="streak tier-${streakTier(n)}" id="streak" role="status" aria-label="Streak: ${n} correct in a row">
+      <span class="streak-flame">${FLAME_SVG}</span>
+      <span class="streak-text"><strong class="streak-num">${n}</strong> in a row</span>
+    </div>`;
+}
+
+function updateStreak(isRight) {
+  quiz.streak = isRight ? quiz.streak + 1 : 0;
+  quiz.bestStreak = Math.max(quiz.bestStreak, quiz.streak);
+
+  const old = document.getElementById("streak");
+  if (!old) return;
+  const tmp = document.createElement("div");
+  tmp.innerHTML = streakHtml(quiz.streak).trim();
+  const el = tmp.firstChild;
+  old.replaceWith(el);
+
+  // A fresh element replays the pop (right) or fizzle (wrong) animation.
+  el.classList.add(isRight ? "streak-pop" : "streak-out");
+  if (isRight && STREAK_MILESTONES.includes(quiz.streak)) {
+    const burst = document.createElement("span");
+    burst.className = "streak-burst";
+    burst.textContent = quiz.streak === 10 ? "10 in a row! On fire!" : `${quiz.streak} in a row!`;
+    burst.addEventListener("animationend", () => burst.remove());
+    el.appendChild(burst);
+  }
+}
+
+// Mood from the share correct, so a 10-question quiz maps exactly to
+// 0-5 = "do better", 6-8 = "good job", 9-10 = "super". Retry quizzes scale the same way.
+function scoreMood(score, total) {
+  const r = total ? score / total : 0;
+  return r >= 0.9 ? "high" : r > 0.5 ? "mid" : "low";
+}
+
+const MOOD_TEXT = {
+  low:  { head: "Hope you can do better next time!", body: "Read the explanations below, then try again. Every quiz makes you stronger." },
+  mid:  { head: "Good job!",                         body: "Solid work. Review what you missed and go for 9 or 10 next time." },
+  high: { head: "Super job!",                        body: "Outstanding! You really know this topic." },
+};
+
+// Robot faces, drawn on the light face plate (x 65-135, y 44-90).
+const ROBOT_FACES = {
+  low: `
+    <path class="bot-line" d="M77 57 L91 53 M123 57 L109 53"/>
+    <circle class="bot-ink" cx="85" cy="67" r="5"/><circle class="bot-ink" cx="115" cy="67" r="5"/>
+    <path class="bot-line" d="M89 83 Q100 76 111 83"/>
+    <path class="bot-drop" d="M131 50 q5 7 0 10 q-5 -3 0 -10z"/>`,
+  mid: `
+    <circle class="bot-ink" cx="85" cy="63" r="6"/><circle class="bot-ink" cx="115" cy="63" r="6"/>
+    <circle class="bot-shine" cx="87" cy="61" r="2"/><circle class="bot-shine" cx="117" cy="61" r="2"/>
+    <path class="bot-line" d="M86 75 Q100 87 114 75"/>`,
+  high: `
+    <path class="bot-line" d="M77 67 Q85 56 93 67 M107 67 Q115 56 123 67"/>
+    <circle class="bot-cheek" cx="74" cy="77" r="5"/><circle class="bot-cheek" cx="126" cy="77" r="5"/>
+    <path class="bot-ink" d="M83 73 Q100 97 117 73 Z"/>
+    <path class="bot-tongue" d="M93 82 Q100 90 107 82 Q100 79 93 82 Z"/>`,
+};
+
+function robotSvg(mood) {
+  return `
+    <svg class="bot bot-${mood}" viewBox="0 0 200 240" role="img" aria-label="A dancing robot">
+      <ellipse class="bot-shadow" cx="100" cy="229" rx="48" ry="7"/>
+      <g class="bot-dance">
+        <g class="bot-leg bot-leg-l"><rect class="bot-limb" x="75" y="168" width="14" height="44" rx="7"/><rect class="bot-main" x="66" y="206" width="28" height="13" rx="6"/></g>
+        <g class="bot-leg bot-leg-r"><rect class="bot-limb" x="111" y="168" width="14" height="44" rx="7"/><rect class="bot-main" x="106" y="206" width="28" height="13" rx="6"/></g>
+        <g class="bot-arm bot-arm-l"><rect class="bot-limb" x="45" y="112" width="14" height="46" rx="7"/><circle class="bot-main" cx="52" cy="162" r="9"/></g>
+        <g class="bot-arm bot-arm-r"><rect class="bot-limb" x="141" y="112" width="14" height="46" rx="7"/><circle class="bot-main" cx="148" cy="162" r="9"/></g>
+        <rect class="bot-main" x="58" y="104" width="84" height="72" rx="14"/>
+        <rect class="bot-screen" x="74" y="120" width="52" height="32" rx="6"/>
+        <text class="bot-code" x="100" y="142" text-anchor="middle">&lt;/&gt;</text>
+        <rect class="bot-limb" x="92" y="94" width="16" height="12" rx="3"/>
+        <g class="bot-head">
+          <line class="bot-stalk" x1="100" y1="34" x2="100" y2="16"/>
+          <circle class="bot-light" cx="100" cy="12" r="6"/>
+          <rect class="bot-main" x="55" y="34" width="90" height="64" rx="18"/>
+          <rect class="bot-face" x="65" y="44" width="70" height="46" rx="12"/>
+          ${ROBOT_FACES[mood]}
+        </g>
+      </g>
+    </svg>`;
+}
+
+function confettiHtml() {
+  const colors = ["#651b32", "#8e8478", "#f2b134", "#3b82f6", "#1d7a46", "#e3a3b5"];
+  let html = "";
+  for (let i = 0; i < 28; i++) {
+    const style = `left:${(Math.random() * 100).toFixed(1)}%;background:${colors[i % colors.length]};` +
+      `animation-delay:${(Math.random() * 2.5).toFixed(2)}s;animation-duration:${(2.2 + Math.random() * 1.6).toFixed(2)}s`;
+    html += `<span class="confetti" style="${style}"></span>`;
+  }
+  return `<div class="confetti-box" aria-hidden="true">${html}</div>`;
+}
+
+function celebrationHtml(score, total, bestStreak) {
+  const mood = scoreMood(score, total);
+  const text = MOOD_TEXT[mood];
+  const head = mood === "high" && score === total ? "Perfect score! Super job!" : text.head;
+  return `
+    <div class="celebrate celebrate-${mood}">
+      ${mood === "high" ? confettiHtml() : ""}
+      <div class="celebrate-bot">${robotSvg(mood)}</div>
+      <div class="celebrate-text">
+        <p class="celebrate-head">${head}</p>
+        <p class="celebrate-body">${text.body}</p>
+        <p class="best-streak tier-${streakTier(bestStreak)}">
+          <span class="streak-flame">${FLAME_SVG}</span>
+          <span>Best streak: <strong>${bestStreak}</strong> in a row</span>
+        </p>
+      </div>
+    </div>`;
+}
+
 
 /* ------------------------------------------------------------------
    Startup and keyboard shortcuts

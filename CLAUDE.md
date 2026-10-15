@@ -68,7 +68,7 @@ defineTopic(1, "1.3", "Expressions and Output", [
 ## Versions
 
 - The project is a git repo. Each release is a commit tagged `v1`, `v2`, ... plus a zip export in `C:\Users\admin\Claude\JavaStudy-versions\JavaStudy-vN.zip` (`git archive --format=zip -o <zip> vN`).
-- Version 1 is the CED-reviewed question bank (including the second concept-question check) with the original page design. Version 2 adds the HTHS letterhead design. Version 3 hides question-bank sizes from students (unit cards show only topic counts, topic rows show no count). Work after it is version 4 until the teacher asks to release it.
+- Version 1 is the CED-reviewed question bank (including the second concept-question check) with the original page design. Version 2 adds the HTHS letterhead design. Version 3 hides question-bank sizes from students (unit cards show only topic counts, topic rows show no count). Version 4 adds game feedback: a flame streak meter during quizzes (grows at 3, 5 and 10 in a row) and a dancing robot on the results screen (0-5 correct: "Hope you can do better", 6-8: "Good job", 9-10: "Super" with confetti; retry quizzes use the same percentages). It is pure SVG/CSS in `js/app.js` and `css/style.css`, and honors reduced-motion settings. Work after it is version 5 until the teacher asks to release it.
 
 ## Publishing
 
